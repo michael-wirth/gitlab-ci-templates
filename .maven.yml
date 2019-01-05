@@ -46,7 +46,7 @@ Build:
       -Dinternal.nexus.password=$NEXUS_PASSWORD
       -P \!developer-machine-not-helsana
       deploy | tee publish.log
-    - sed -rn '/stubs.jar/! s/^.*Uploaded to.* (http?:\/\/.*\.jar).*$/\1/1p' publish.log  > artifact-url.log
+    - sed -rn '/stubs.jar/! s/^.*Uploaded to.*(http?:\/\/.*\.jar).*$/\1/1p' publish.log | head -1 > artifact-url.log
   artifacts:
     name: "build-$CI_COMMIT_REF_NAME"
     paths:

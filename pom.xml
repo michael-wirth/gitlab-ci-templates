@@ -19,19 +19,18 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <spring-cloud-deployer-dependencies.version>2.0.0.BUILD-SNAPSHOT</spring-cloud-deployer-dependencies.version>
-        <wagon-webdav-jackrabbit.version>3.2.0</wagon-webdav-jackrabbit.version>
     </properties>
 
     <!-- Distribution -->
     <distributionManagement>
         <repository>
             <id>releases</id>
-            <url>dav:http://alma-artifact/nexus/content/repositories/releases/</url>
+            <url>http://alma-artifact.hel.kko.ch/nexus/content/repositories/releases/</url>
         </repository>
         <snapshotRepository>
             <uniqueVersion>false</uniqueVersion>
             <id>snapshots</id>
-            <url>dav:http://alma-artifact/nexus/content/repositories/snapshots/</url>
+            <url>http://alma-artifact.hel.kko.ch/nexus/content/repositories/snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -118,13 +117,6 @@
                 </executions>
             </plugin>
         </plugins>
-        <extensions>
-            <extension>
-                <groupId>org.apache.maven.wagon</groupId>
-                <artifactId>wagon-webdav-jackrabbit</artifactId>
-                <version>${wagon-webdav-jackrabbit.version}</version>
-            </extension>
-        </extensions>
     </build>
 
     <profiles>
