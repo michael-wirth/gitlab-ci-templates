@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <proxies>
+    <proxy>
+      <id>Proxy</id>
+      <active>true</active>
+      <protocol>http</protocol>
+      <host>server-proxy</host>
+      <port>8080</port>
+      <username>${internal.jenkins.username}</username>
+      <password>${internal.jenkins.password}</password>
+      <nonProxyHosts>
+        localhost|alma-artifact.hel.kko.ch|alma-artifact|alma-artifact-entw.hel.kko.ch|alma-artifact-entw|msswlmp01
+      </nonProxyHosts>
+    </proxy>
+  </proxies>
+  <profiles>
+    <profile>
+      <id>jgitflow</id>
+      <properties>
+        <https.proxyHost>server-proxy
+        </https.proxyHost>
+        <https.proxyPort>8080</https.proxyPort>
+        <!-- properties for jgitflow on gitlab.com (because jgitflow ignores credentials in git store) -->
+        <username>${internal.gitlab.username}</username>
+        <password>${internal.gitlab.password}</password>
+      </properties>
+    </profile>
+  </profiles>
+  <servers>
+    <server>
+      <id>jenkins</id>
+      <username>${internal.jenkins.username}</username>
+      <password>${internal.jenkins.password}</password>
+    </server>
+    <server>
+      <id>snapshots</id>
+      <username>${internal.nexus.username}</username>
+      <password>${internal.nexus.password}</password>
+    </server>
+    <server>
+      <id>releases</id>
+      <username>${internal.nexus.username}</username>
+      <password>${internal.nexus.password}</password>
+    </server>
+    <server>
+      <id>gitlab.com</id>
+      <username>${internal.gitlab.username}</username>
+      <password>${internal.gitlab.password}</password>
+    </server>
+  </servers>
+
+  <activeProfiles>
+    <activeProfile>jgitflow</activeProfile>
+  </activeProfiles>
+</settings>

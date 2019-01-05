@@ -1,0 +1,50 @@
+---
+#                                 _   _                    _
+#  ___  ___ _ __ ___   __ _ _ __ | |_(_) ___      _ __ ___| | ___  __ _ ___  ___
+#  / __|/ _ \ '_ ` _ \ / _` | '_ \| __| |/ __|____| '__/ _ \ |/ _ \/ _` / __|/ _ \
+#  \__ \  __/ | | | | | (_| | | | | |_| | (_|_____| | |  __/ |  __/ (_| \__ \  __/
+#  |___/\___|_| |_| |_|\__,_|_| |_|\__|_|\___|    |_|  \___|_|\___|\__,_|___/\___|
+#
+
+# Available variables in addition to the predefined variables:
+#   https://docs.gitlab.com/ee/ci/variables/#predefined-variables-environment-variables
+variables:
+  PROXY_HOST: "server-proxy"
+  PROXY_PORT: "8080"
+
+.except_release_commits:
+  except:
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /^\d+\.\d+\.\d+/
+    refs:
+      - tags
+
+# -------
+# Release
+# -------
+Release:
+  extends: .except_release_commits
+  stage: Release
+  cache:
+    paths:
+      - node_modules/\
+  before_script:
+    - npm config set proxy http://${PROXY_HOST}:${PROXY_POST}
+    - npm config set https-proxy http://${PROXY_HOST}:${PROXY_POST}
+    - git fetch origin $CI_COMMIT_REF_NAME
+    - git checkout $CI_COMMIT_REF_NAME
+    - git reset --hard origin/$CI_COMMIT_REF_NAME
+    - git checkout -q $CI_BUILD_REF
+    - git log --color --graph --abbrev-commit --max-count 20 --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'
+  script:
+    - npm install --no-save semantic-release
+      @semantic-release/gitlab
+      helsana/global-tunnel-semantic-release
+      helsana/maven-semantic-release
+      semantic-release-conventional-commits
+    - npx semantic-release --debug
+  tags:
+    - helsana
+  only:
+    refs:
+      - master

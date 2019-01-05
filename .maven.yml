@@ -1,0 +1,103 @@
+---
+#    _ ___         _  _     _ ___  _   _    ___       _
+#   /   |     /   /  | \   |_) |  |_) |_ |   |  |\ | |_
+#   \_ _|_   /    \_ |_/   |  _|_ |   |_ |_ _|_ | \| |_
+#
+#
+# Builds & tests the project and deploys the artifacts
+# * Master Commits are ignored
+# * Deployments to Prod from Tag only
+
+
+# Available variables in addition to the predefined variables:
+#   https://docs.gitlab.com/ee/ci/variables/#predefined-variables-environment-variables
+variables:
+  ARTIFACT_ID: "undefined"
+  GROUP_ID: "ch/helsana/microservice"
+  GITLAB_SETTINGS: "/usr/local/maven/conf/settings.gitlab.xml"
+  NEXUS_HOST: "http://alma-artifact.hel.kko.ch"
+  PROXY_HOST: "server-proxy"
+  PROXY_PORT: "8080"
+  JAVA_OPTS: "-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=\"localhost|*.hel.kko.ch|alma-artifact|alma-artifact-entw|msswlmp01\""
+
+.only_release_commits:
+  only:
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /^\d+\.\d+\.\d+/
+  except:
+    refs:
+      - tags
+
+.except_release_commits:
+  except:
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /^\d+\.\d+\.\d+/
+    refs:
+      - tags
+
+# ---------------------
+# Build stage jobs
+# ---------------------
+Build:
+  extends: .except_release_commits
+  stage: Build
+  script:
+    - if [[ $CI_COMMIT_REF_SLUG =~ ^release\/.*$ ]]; then DEPLOY_PROFILE="-Prelease"; else DEPLOY_PROFILE=""; fi
+    - mvn -B -U
+      --settings settings.xml
+      -Dinternal.nexus.username=$NEXUS_USERNAME
+      -Dinternal.nexus.password=$NEXUS_PASSWORD
+      -P \!developer-machine-not-helsana $DEPLOY_PROFILE
+      deploy | tee publish.log
+    - sed -rn '/stubs.jar/! s/^.*Uploaded to.* (http?:\/\/.*\.jar).*$/\1/1p' publish.log  > artifact-url.log
+  artifacts:
+    name: "build-$CI_COMMIT_REF_NAME"
+    paths:
+      - artifact-url.log
+  tags:
+    - helsana
+
+# ---------------------
+# Upload stage jobs
+# ---------------------
+Upload Artifact (Helsana):
+  extends: .only_release_commits
+  stage: Build
+  script:
+    - if [[ $CI_COMMIT_REF_SLUG =~ ^release\/.*$ ]]; then DEPLOY_PROFILE="-Prelease"; else DEPLOY_PROFILE=""; fi
+    - mvn -B -U
+      --settings settings.xml
+      -Dinternal.nexus.username=$NEXUS_USERNAME
+      -Dinternal.nexus.password=$NEXUS_PASSWORD
+      -P \!developer-machine-not-helsana $DEPLOY_PROFILE
+      -DskipTests
+      deploy | tee publish.log
+    - sed -rn '/stubs.jar/! s/^.*Uploaded to.* (http?:\/\/.*\.jar).*$/\1/1p' publish.log  > artifact-url.log
+  artifacts:
+    name: "build-$CI_COMMIT_REF_NAME"
+    paths:
+      - artifact-url.log
+  tags:
+    - helsana
+  except:
+    - tags
+
+Upload Artifact (Azure):
+  extends: .only_release_commits
+  stage: Build
+  variables:
+    JAVA_OPTS: ''
+  script:
+  - mvn -B -U
+    -Dinternal.nexus.username=$NEXUS_USERNAME
+    -Dinternal.nexus.password=$NEXUS_PASSWORD
+    -DforkCount=0
+    -Pazure-nexus
+    deploy
+  after_script:
+    - 'curl -X POST "http://nexusvm.cloudapp.net/service/rest/v1/script/deleteAssets/run" -H "Accept: application/json" -d "{ \"repoName\":\"maven-site\", \"assetName\":\"${GROUPD_ID}/${ARTIFACT_ID}.*\" }"'
+    - path_prefix_length=$(wc -m <<< ${GROUP_ID})
+    - find build/asciidoc/html5 -type f -exec sh -c 'curl -s -H "Expect:" -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" --upload-file {} "http://nexusvm.cloudapp.net/repository/maven-site/${GROUPD_ID}/${ARTIFACT_ID}/$(echo {} | cut -c ${path_prefix_length}-)"' \;
+  allow_failure: true
+  tags:
+    - azure

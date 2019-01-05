@@ -1,0 +1,147 @@
+---
+#       _            _                                  _
+#    __| | ___ _ __ | | ___  _   _ _ __ ___   ___ _ __ | |_
+#   / _` |/ _ \ '_ \| |/ _ \| | | | '_ ` _ \ / _ \ '_ \| __|
+#  | (_| |  __/ |_) | | (_) | |_| | | | | | |  __/ | | | |_
+#   \__,_|\___| .__/|_|\___/ \__, |_| |_| |_|\___|_| |_|\__|
+#             |_|            |___/
+
+# Available variables in addition to the predefined variables:
+#   https://docs.gitlab.com/ee/ci/variables/#predefined-variables-environment-variables
+variables:
+  ARTIFACT_ID: "undefined"
+  SERVICE_PORT: "undefined"
+  SERVICE_ID: ${ARTIFACT_ID}
+  GROUP_ID: "ch/helsana/microservice"
+  NEXUS_HOST: "http://alma-artifact.hel.kko.ch"
+  ARTIFACT_URL_TEMPLATE: "$NEXUS_HOST/nexus/content/repositories/releases/${GROUP_ID}/${ARTIFACT_ID}/_VERSION_/${ARTIFACT_ID}-_VERSION_.jar"
+  DEPLOYMENT_SCRIPT: "sudo -u spring /srv/admin/bin/deploy_spring.sh"
+  EUREKA_URI: "eureka-server/eureka/apps/$ARTIFACT_ID"
+  SSH_CONFIG: non_prod_config
+
+.only_release_commits:
+  only:
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /^\d+\.\d+\.\d+/
+  except:
+    refs:
+      - tags
+
+.except_release_commits:
+  except:
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /^\d+\.\d+\.\d+/
+    refs:
+      - tags
+
+.deploy_app:
+  extends: .only_release_commits
+  stage: Deploy
+  script:
+    - |
+      ARTIFACT_URL="$(cat artifact-url.log)"
+      echo $ARTIFACT_URL
+      echo deploy $SERVICE_ID with artefact $ARTIFACT_URL to $SERVER_LIST
+
+      ARTIFACT_STATUS_CODE=$(curl --write-out %{http_code} --silent --output /dev/null $ARTIFACT_URL)
+      if [ "$ARTIFACT_STATUS_CODE" -ne 200 ]
+      then
+        echo -e "${ECHO_COLOR_ERROR}Artifact $ARTIFACT_URL does not exist anymore on Nexus${ECHO_COLOR_RESET}"
+        exit 1
+      fi
+      echo -e "${ECHO_COLOR_INFO}Deploy $ARTIFACT_ID with artifact $ARTIFACT_URL to $SERVER_LIST${ECHO_COLOR_RESET}"
+      for SERVER in ${SERVER_LIST//,/ }
+      do
+        echo -e "${ECHO_COLOR_INFO}Deploy to $SERVER...${ECHO_COLOR_RESET}"
+        echo -e "Unregister $SSH_CONFIG $SERVER curl -X PUT http://localhost:8761/eureka/apps/$ARTIFACT_ID/$SERVER.hel.kko.ch:$ARTIFACT_ID:$SERVICE_PORT/status?value=OUT_OF_SERVICE "
+
+        ssh -F ~/.ssh/$SSH_CONFIG $SERVER curl -X PUT http://localhost:8761/eureka/apps/$ARTIFACT_ID/$SERVER.hel.kko.ch:$ARTIFACT_ID:$SERVICE_PORT/status?value=OUT_OF_SERVICE
+        sleep 5
+
+        ssh -F ~/.ssh/$SSH_CONFIG $SERVER "$DEPLOYMENT_SCRIPT $ARTIFACT_ID $ARTIFACT_URL"
+
+        SERVER_STATUS_URL="http://localhost:8761/eureka/instances/$SERVER.hel.kko.ch:$ARTIFACT_ID:$SERVICE_PORT"
+        echo -e "$SERVER_STATUS_URL"
+
+        MAX_REPS=1
+        until [ "$MAX_REPS" -gt 10 ]
+        do
+          echo -e "${ECHO_COLOR_INFO}Wait until $ARTIFACT_ID has started on $SERVER...[$MAX_REPS]${ECHO_COLOR_RESET}"
+          if ssh -F ~/.ssh/$SSH_CONFIG $SERVER curl -s $SERVER_STATUS_URL | grep -m 1 "<status>UP</status>"
+          then
+            echo -e "${ECHO_COLOR_SUCCESS}Deployment succeeded${ECHO_COLOR_RESET}"
+            break
+          else
+            let MAX_REPS=MAX_REPS+1
+            sleep 5
+          fi
+        done
+        if [ "$MAX_REPS" -gt 10 ]
+        then
+          echo -e "${ECHO_COLOR_ERROR}Deployment health check failed${ECHO_COLOR_RESET}"
+          exit 1
+        fi
+      done
+  tags:
+    - helsana
+  when: manual
+
+# ---------------------
+# Deploy stage jobs
+# ---------------------
+Development:
+  extends: .deploy_app
+  variables:
+    SERVER_LIST: myhelapt8001
+    EUREKA_BASE_URL: http://internet-myhelsana-fsl-entwicklung.hel.kko.ch
+  except:
+    - tags
+  environment:
+    name: development
+    url: http://internet-myhelsana-fsl-entwicklung.hel.kko.ch/spring-boot-admin/#/
+  only:
+    - branches
+    - master
+
+Integration:
+  extends: .deploy_app
+  variables:
+    SERVER_LIST: myhelapt5011
+    EUREKA_BASE_URL: http://internet-myhelsana-fsl-integration.hel.kko.ch
+  except:
+    - tags
+  environment:
+    name: integration
+    url: http://internet-myhelsana-fsl-integration.hel.kko.ch/spring-boot-admin/#/
+  only:
+    - branches
+    - master
+
+Preprod:
+  extends: .deploy_app
+  variables:
+    SERVER_LIST: myhelapt0011,myhelapt0012
+    EUREKA_BASE_URL: http://internet-myhelsana-fsl-preprod.hel.kko.ch
+  environment:
+    name: preprod
+    url: http://internet-myhelsana-fsl-preprod.hel.kko.ch/spring-boot-admin/#/
+
+Preprod02:
+  extends: .deploy_app
+  variables:
+    SERVER_LIST: myhelapt2011,myhelapt2012
+    EUREKA_BASE_URL: http://internet-myhelsana-fsl-preprod02.hel.kko.ch
+  environment:
+    name: preprod02
+    url: http://internet-myhelsana-fsl-preprod02.hel.kko.ch/spring-boot-admin/#/
+
+Prod:
+  extends: .deploy_app
+  variables:
+    SSH_CONFIG: prod_config
+    SERVER_LIST: myhelapp0011,myhelapp0012
+    EUREKA_BASE_URL: http://internet-myhelsana-fsl.hel.kko.ch
+  environment:
+    name: production
+    url: http://internet-myhelsana-fsl.hel.kko.ch/spring-boot-admin/#/
+
