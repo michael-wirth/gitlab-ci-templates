@@ -1,0 +1,8 @@
+variables:
+  ARTIFACT_ID: "gitlab-ci-templates"
+  SERVICE_PORT: "0"
+
+include:
+  - https://gitlab.com/helsana/myhelsana/gitlab-ci-templates/raw/master/.maven.yml
+  - https://gitlab.com/helsana/myhelsana/gitlab-ci-templates/raw/master/.semantic-release.yml
+  - https://gitlab.com/helsana/myhelsana/gitlab-ci-templates/raw/master/.deploy.yml
