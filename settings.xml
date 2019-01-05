@@ -17,19 +17,6 @@
       </nonProxyHosts>
     </proxy>
   </proxies>
-  <profiles>
-    <profile>
-      <id>jgitflow</id>
-      <properties>
-        <https.proxyHost>server-proxy
-        </https.proxyHost>
-        <https.proxyPort>8080</https.proxyPort>
-        <!-- properties for jgitflow on gitlab.com (because jgitflow ignores credentials in git store) -->
-        <username>${internal.gitlab.username}</username>
-        <password>${internal.gitlab.password}</password>
-      </properties>
-    </profile>
-  </profiles>
   <servers>
     <server>
       <id>jenkins</id>
@@ -53,7 +40,4 @@
     </server>
   </servers>
 
-  <activeProfiles>
-    <activeProfile>jgitflow</activeProfile>
-  </activeProfiles>
 </settings>

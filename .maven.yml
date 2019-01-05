@@ -1,20 +1,16 @@
 ---
-#    _ ___         _  _     _ ___  _   _    ___       _
-#   /   |     /   /  | \   |_) |  |_) |_ |   |  |\ | |_
-#   \_ _|_   /    \_ |_/   |  _|_ |   |_ |_ _|_ | \| |_
+#  _ __ ___   __ ___   _____ _ __
+# | '_ ` _ \ / _` \ \ / / _ \ '_ \
+# | | | | | | (_| |\ V /  __/ | | |
+# |_| |_| |_|\__,_| \_/ \___|_| |_|
 #
-#
-# Builds & tests the project and deploys the artifacts
-# * Master Commits are ignored
-# * Deployments to Prod from Tag only
-
 
 # Available variables in addition to the predefined variables:
 #   https://docs.gitlab.com/ee/ci/variables/#predefined-variables-environment-variables
 variables:
   ARTIFACT_ID: "undefined"
   GROUP_ID: "ch/helsana/microservice"
-  GITLAB_SETTINGS: "/usr/local/maven/conf/settings.gitlab.xml"
+  GITLAB_SETTINGS: "https://raw.githubusercontent.com/michael-wirth/gitlab-ci-templates/master/settings.xml"
   NEXUS_HOST: "http://alma-artifact.hel.kko.ch"
   PROXY_HOST: "server-proxy"
   PROXY_PORT: "8080"
@@ -40,14 +36,15 @@ variables:
 # ---------------------
 Build:
   extends: .except_release_commits
-  stage: Build
+  stage: build
   script:
+    - curl ${GITLAB_SETTINGS} -o settings.xml
     - if [[ $CI_COMMIT_REF_SLUG =~ ^release\/.*$ ]]; then DEPLOY_PROFILE="-Prelease"; else DEPLOY_PROFILE=""; fi
     - mvn -B -U
       --settings settings.xml
       -Dinternal.nexus.username=$NEXUS_USERNAME
       -Dinternal.nexus.password=$NEXUS_PASSWORD
-      -P \!developer-machine-not-helsana $DEPLOY_PROFILE
+      -P \!developer-machine-not-helsana
       deploy | tee publish.log
     - sed -rn '/stubs.jar/! s/^.*Uploaded to.* (http?:\/\/.*\.jar).*$/\1/1p' publish.log  > artifact-url.log
   artifacts:
@@ -62,14 +59,15 @@ Build:
 # ---------------------
 Upload Artifact (Helsana):
   extends: .only_release_commits
-  stage: Build
+  stage: build
   script:
+    - curl ${GITLAB_SETTINGS} -o settings.xml
     - if [[ $CI_COMMIT_REF_SLUG =~ ^release\/.*$ ]]; then DEPLOY_PROFILE="-Prelease"; else DEPLOY_PROFILE=""; fi
     - mvn -B -U
       --settings settings.xml
       -Dinternal.nexus.username=$NEXUS_USERNAME
       -Dinternal.nexus.password=$NEXUS_PASSWORD
-      -P \!developer-machine-not-helsana $DEPLOY_PROFILE
+      -P \!developer-machine-not-helsana
       -DskipTests
       deploy | tee publish.log
     - sed -rn '/stubs.jar/! s/^.*Uploaded to.* (http?:\/\/.*\.jar).*$/\1/1p' publish.log  > artifact-url.log
@@ -84,16 +82,16 @@ Upload Artifact (Helsana):
 
 Upload Artifact (Azure):
   extends: .only_release_commits
-  stage: Build
+  stage: build
   variables:
     JAVA_OPTS: ''
   script:
-  - mvn -B -U
-    -Dinternal.nexus.username=$NEXUS_USERNAME
-    -Dinternal.nexus.password=$NEXUS_PASSWORD
-    -DforkCount=0
-    -Pazure-nexus
-    deploy
+    - mvn -B -U
+      -Dinternal.nexus.username=$NEXUS_USERNAME
+      -Dinternal.nexus.password=$NEXUS_PASSWORD
+      -DforkCount=0
+      -Pazure-nexus
+      deploy
   after_script:
     - 'curl -X POST "http://nexusvm.cloudapp.net/service/rest/v1/script/deleteAssets/run" -H "Accept: application/json" -d "{ \"repoName\":\"maven-site\", \"assetName\":\"${GROUPD_ID}/${ARTIFACT_ID}.*\" }"'
     - path_prefix_length=$(wc -m <<< ${GROUP_ID})

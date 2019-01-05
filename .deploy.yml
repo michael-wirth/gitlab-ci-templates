@@ -36,7 +36,7 @@ variables:
 
 .deploy_app:
   extends: .only_release_commits
-  stage: Deploy
+  stage: deploy
   script:
     - |
       ARTIFACT_URL="$(cat artifact-url.log)"

@@ -1,0 +1,15 @@
+{
+  "analyzeCommits": {
+    "path": "semantic-release-conventional-commits"
+  },
+  "tagFormat": "${version}",
+  "plugins": [
+    "@helsana/global-tunnel-semantic-release",
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/gitlab",
+    "@helsana/maven-semantic-release"
+  ],
+  "success": false,
+  "fail": false
+}

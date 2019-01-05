@@ -3,6 +3,6 @@ variables:
   SERVICE_PORT: "0"
 
 include:
-  - https://gitlab.com/helsana/myhelsana/gitlab-ci-templates/raw/master/.maven.yml
-  - https://gitlab.com/helsana/myhelsana/gitlab-ci-templates/raw/master/.semantic-release.yml
-  - https://gitlab.com/helsana/myhelsana/gitlab-ci-templates/raw/master/.deploy.yml
+  - https://raw.githubusercontent.com/michael-wirth/gitlab-ci-templates/master/.maven.yml
+  - https://raw.githubusercontent.com/michael-wirth/gitlab-ci-templates/master/.semantic-release.yml
+  - https://raw.githubusercontent.com/michael-wirth/gitlab-ci-templates/master/.deploy.yml

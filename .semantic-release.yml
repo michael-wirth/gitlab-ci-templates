@@ -1,6 +1,6 @@
 ---
-#                                 _   _                    _
-#  ___  ___ _ __ ___   __ _ _ __ | |_(_) ___      _ __ ___| | ___  __ _ ___  ___
+#                                  _   _                    _
+#   ___  ___ _ __ ___   __ _ _ __ | |_(_) ___      _ __ ___| | ___  __ _ ___  ___
 #  / __|/ _ \ '_ ` _ \ / _` | '_ \| __| |/ __|____| '__/ _ \ |/ _ \/ _` / __|/ _ \
 #  \__ \  __/ | | | | | (_| | | | | |_| | (_|_____| | |  __/ |  __/ (_| \__ \  __/
 #  |___/\___|_| |_| |_|\__,_|_| |_|\__|_|\___|    |_|  \___|_|\___|\__,_|___/\___|
@@ -24,13 +24,14 @@ variables:
 # -------
 Release:
   extends: .except_release_commits
-  stage: Release
+  stage: deploy
   cache:
     paths:
       - node_modules/\
   before_script:
-    - npm config set proxy http://${PROXY_HOST}:${PROXY_POST}
-    - npm config set https-proxy http://${PROXY_HOST}:${PROXY_POST}
+    - npm config set proxy http://${PROXY_HOST}:${PROXY_PORT}
+    - npm config set https-proxy http://${PROXY_HOST}:${PROXY_PORT}
+    - npm config list -g
     - git fetch origin $CI_COMMIT_REF_NAME
     - git checkout $CI_COMMIT_REF_NAME
     - git reset --hard origin/$CI_COMMIT_REF_NAME

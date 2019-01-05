@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>ch.helsana.microservice</groupId>
+    <artifactId>gitlab-ci-template</artifactId>
+    <version>0.0.1.BUILD-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-build</artifactId>
+        <version>2.1.0.RC2</version>
+        <relativePath/>
+    </parent>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
+        <spring-cloud-deployer-dependencies.version>2.0.0.BUILD-SNAPSHOT</spring-cloud-deployer-dependencies.version>
+        <wagon-webdav-jackrabbit.version>3.2.0</wagon-webdav-jackrabbit.version>
+    </properties>
+
+    <!-- Distribution -->
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <url>dav:http://alma-artifact/nexus/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>snapshots</id>
+            <url>dav:http://alma-artifact/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-deployer-dependencies</artifactId>
+                <version>${spring-cloud-deployer-dependencies.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <!--optional so that it does its job while compiling, but is not included in
+            the resulting artifact -->
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>exec</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-webdav-jackrabbit</artifactId>
+                <version>${wagon-webdav-jackrabbit.version}</version>
+            </extension>
+        </extensions>
+    </build>
+
+    <profiles>
+        <!-- entwicklungs artifatory -->
+        <profile>
+            <id>release-dry-run</id>
+            <!--Deploy artifacts to nexus PRE-PROD-->
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>snapshots</id>
+                    <name>Helsana Snapshots auf Alma Entw.</name>
+                    <url>http://alma-artifact-entw.hel.kko.ch/nexus/repository/snapshots/</url>
+                </snapshotRepository>
+
+                <repository>
+                    <id>releases</id>
+                    <name>Helsana Releases auf Alma Entw.</name>
+                    <url>http://alma-artifact-entw.hel.kko.ch/nexus/repository/releases/</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+
+    </profiles>
+</project>
