@@ -35,6 +35,35 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <repositories>
+        <!-- Repositories to allow snapshot and milestone BOM imports during development.
+            This section is stripped by the flatten plugin during install/deploy. -->
+
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>spring-milestone</id>
+            <name>Spring Milestone</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>spring-snapshot</id>
+            <name>Spring Snapshot</name>
+            <url>https://repo.spring.io/snapshot</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -121,7 +150,6 @@
         <!-- azure repo -->
         <profile>
             <id>azure-nexus</id>
-
             <!-- Distribution -->
             <distributionManagement>
                 <repository>
@@ -134,6 +162,17 @@
                     <url>http://nexusvm.cloudapp.net/repository/maven-snapshots/</url>
                 </snapshotRepository>
             </distributionManagement>
+
+            <repositories>
+                <repository>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                    <id>azure-nexus</id>
+                    <name>azure-nexus</name>
+                    <url>http://nexusvm.cloudapp.net/repository/maven-public/</url>
+                </repository>
+            </repositories>
         </profile>
 
     </profiles>
