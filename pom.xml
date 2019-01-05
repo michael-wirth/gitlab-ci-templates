@@ -162,17 +162,6 @@
                     <url>http://nexusvm.cloudapp.net/repository/maven-snapshots/</url>
                 </snapshotRepository>
             </distributionManagement>
-
-            <repositories>
-                <repository>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                    <id>azure-nexus</id>
-                    <name>azure-nexus</name>
-                    <url>http://nexusvm.cloudapp.net/repository/maven-public/</url>
-                </repository>
-            </repositories>
         </profile>
 
     </profiles>
