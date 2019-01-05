@@ -99,7 +99,7 @@
     </build>
 
     <profiles>
-        <!-- entwicklungs artifatory -->
+        <!-- entwicklungs repo -->
         <profile>
             <id>release-dry-run</id>
             <!--Deploy artifacts to nexus PRE-PROD-->
@@ -115,6 +115,24 @@
                     <name>Helsana Releases auf Alma Entw.</name>
                     <url>http://alma-artifact-entw.hel.kko.ch/nexus/repository/releases/</url>
                 </repository>
+            </distributionManagement>
+        </profile>
+
+        <!-- azure repo -->
+        <profile>
+            <id>azure-nexus</id>
+
+            <!-- Distribution -->
+            <distributionManagement>
+                <repository>
+                    <id>azure-nexus</id>
+                    <url>http://nexusvm.cloudapp.net/repository/maven-releases/</url>
+                </repository>
+                <snapshotRepository>
+                    <id>azure-nexus</id>
+                    <uniqueVersion>false</uniqueVersion>
+                    <url>http://nexusvm.cloudapp.net/repository/maven-snapshots/</url>
+                </snapshotRepository>
             </distributionManagement>
         </profile>
 

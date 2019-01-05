@@ -90,12 +90,15 @@ Upload Artifact (Azure):
       -Dinternal.nexus.username=$NEXUS_USERNAME
       -Dinternal.nexus.password=$NEXUS_PASSWORD
       -DforkCount=0
-      -Pazure-nexus
+      -Pspring,azure-nexus
       deploy
   after_script:
-    - 'curl -X POST "http://nexusvm.cloudapp.net/service/rest/v1/script/deleteAssets/run" -H "Accept: application/json" -d "{ \"repoName\":\"maven-site\", \"assetName\":\"${GROUPD_ID}/${ARTIFACT_ID}.*\" }"'
-    - path_prefix_length=$(wc -m <<< ${GROUP_ID})
-    - find build/asciidoc/html5 -type f -exec sh -c 'curl -s -H "Expect:" -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" --upload-file {} "http://nexusvm.cloudapp.net/repository/maven-site/${GROUPD_ID}/${ARTIFACT_ID}/$(echo {} | cut -c ${path_prefix_length}-)"' \;
+    - |
+      path_prefix_length=$(echo ${GROUP_ID} | wc -m)
+      if [ -d "build/asciidoc/html5" ]; then
+        curl -X POST "http://nexusvm.cloudapp.net/service/rest/v1/script/deleteAssets/run" -H "Accept: application/json" -d "{ \"repoName\":\"maven-site\", \"assetName\":\"${GROUPD_ID}/${ARTIFACT_ID}.*\" }"
+        find build/asciidoc/html5 -type f -exec sh -c 'curl -s -H "Expect:" -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" --upload-file {} "http://nexusvm.cloudapp.net/repository/maven-site/${GROUPD_ID}/${ARTIFACT_ID}/$(echo {} | cut -c ${path_prefix_length}-)"' \;
+      fi
   allow_failure: true
   tags:
     - azure
